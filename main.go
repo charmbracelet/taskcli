@@ -29,10 +29,10 @@ func main() {
 			log.Fatal(err)
 		}
 	}
+	if err := t.insert("cook currywurst", ""); err != nil {
+		log.Fatal(err)
+	}
 	/*
-		if err := t.insert("get milk", ""); err != nil {
-			log.Fatal(err)
-		}
 
 		if err := t.insert("get cereal", ""); err != nil {
 			log.Fatal(err)
@@ -42,12 +42,5 @@ func main() {
 	// 	log.Fatal(err)
 	// }
 	tasks, _ := t.getTasks()
-	fmt.Printf("%#v", tasks)
-
-	if err := t.editProject(3, "groceries"); err != nil {
-		log.Fatal(err)
-	}
-
-	tasks, _ = t.getTasks()
 	fmt.Printf("%#v", tasks)
 }
