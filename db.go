@@ -47,13 +47,14 @@ type taskDB struct {
 }
 
 func initTaskDir(path string) error {
-	_, err := os.Stat(path)
-	if os.IsNotExist(err) {
-		if err := os.Mkdir(path, 0o755); err != nil {
-			return err
+	if _, err := os.Stat(path); err != nil {
+		if os.IsNotExist(err) {
+			return os.Mkdir(path, 0o755)
 		}
+
+		return err
 	}
-	return err
+	return nil
 }
 
 func (t *taskDB) tableExists(name string) bool {

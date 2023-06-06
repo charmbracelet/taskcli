@@ -7,16 +7,33 @@ import (
 	"os"
 
 	_ "github.com/mattn/go-sqlite3"
+	gap "github.com/muesli/go-app-paths"
 )
 
-func main() {
-	home, _ := os.UserHomeDir()
-	taskDir := fmt.Sprintf("%s/.tasks", home)
+// setupPath uses XDG to create the necessary data dirs for the program.
+func setupPath() string {
+	// get XDG paths
+	scope := gap.NewScope(gap.User, "tasks")
+	dirs, err := scope.DataDirs()
+	if err != nil {
+		log.Fatal(err)
+	}
+	// create the app base dir, if it doesn't exist
+	var taskDir string
+	if len(dirs) > 0 {
+		taskDir = dirs[0]
+	} else {
+		taskDir, _ = os.UserHomeDir()
+	}
 	if err := initTaskDir(taskDir); err != nil {
 		log.Fatal(err)
 	}
+	return taskDir
+}
 
-	db, err := sql.Open("sqlite3", fmt.Sprintf("%s/tasks.db", taskDir))
+func main() {
+	path := setupPath()
+	db, err := sql.Open("sqlite3", fmt.Sprintf("%s/tasks.db", path))
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -32,15 +49,6 @@ func main() {
 	if err := t.insert("cook currywurst", ""); err != nil {
 		log.Fatal(err)
 	}
-	/*
-
-		if err := t.insert("get cereal", ""); err != nil {
-			log.Fatal(err)
-		}
-	*/
-	// if err := t.delete(1); err != nil {
-	// 	log.Fatal(err)
-	// }
 	tasks, _ := t.getTasks()
 	fmt.Printf("%#v", tasks)
 }
