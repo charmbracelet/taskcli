@@ -31,24 +31,24 @@ func setupPath() string {
 	return taskDir
 }
 
-func main() {
-	path := setupPath()
+func openDB(path string) (*taskDB, error) {
 	db, err := sql.Open("sqlite3", fmt.Sprintf("%s/tasks.db", path))
 	if err != nil {
-		log.Fatal(err)
+		return nil, err
 	}
-	defer db.Close()
-	t := taskDB{db}
-
+	t := taskDB{db, path}
 	if !t.tableExists("tasks") {
 		err := t.createTable()
 		if err != nil {
-			log.Fatal(err)
+			return nil, err
 		}
 	}
-	if err := t.insert("cook currywurst", ""); err != nil {
-		log.Fatal(err)
+	return &t, nil
+}
+
+func main() {
+	if err := rootCmd.Execute(); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 	}
-	tasks, _ := t.getTasks()
-	fmt.Printf("%#v", tasks)
 }

@@ -8,8 +8,6 @@ import (
 	"time"
 )
 
-// TODO: make a single Update/Set function
-
 type status int
 
 const (
@@ -19,9 +17,12 @@ const (
 
 // SQL helpers
 const (
-	updateCmd = "UPDATE tasks SET name = ?, project = ?, status = ? WHERE id = ?"
-	insertCmd = "INSERT INTO tasks(name, project, status, created) VALUES( ?, ?, ?, ?)"
-	deleteCmd = "DELETE FROM tasks WHERE id = ?"
+	// Make sure you're following this format for your SQL statements to avoid
+	// SQL injections. This format creates prepared statements at run time.
+	// learn more: https://go.dev/doc/database/sql-injection
+	updateStmt = "UPDATE tasks SET name = ?, project = ?, status = ? WHERE id = ?"
+	insertStmt = "INSERT INTO tasks(name, project, status, created) VALUES( ?, ?, ?, ?)"
+	deleteStmt = "DELETE FROM tasks WHERE id = ?"
 
 	commitTxnErr  = "unable to commit txn: %w"
 	prepareTxnErr = "unable to prepare txn: %w"
@@ -43,15 +44,15 @@ type task struct {
 }
 
 type taskDB struct {
-	db *sql.DB
+	db      *sql.DB
+	dataDir string
 }
 
 func initTaskDir(path string) error {
 	if _, err := os.Stat(path); err != nil {
 		if os.IsNotExist(err) {
-			return os.Mkdir(path, 0o755)
+			return os.Mkdir(path, 0o770)
 		}
-
 		return err
 	}
 	return nil
@@ -65,8 +66,22 @@ func (t *taskDB) tableExists(name string) bool {
 }
 
 func (t *taskDB) createTable() error {
+	tx, err := t.db.Begin()
+	if err != nil {
+		return fmt.Errorf(beginDBErr, err)
+	}
 	cmd := `CREATE TABLE "tasks" ( "id" INTEGER, "name" TEXT NOT NULL, "project" TEXT, "status" TEXT, "created" DATETIME, PRIMARY KEY("id" AUTOINCREMENT))`
-	_, err := t.db.Exec(cmd)
+	stmt, err := tx.Prepare(cmd)
+	if err != nil {
+		return fmt.Errorf(prepareTxnErr, err)
+	}
+	defer stmt.Close()
+	if _, err := stmt.Exec(); err != nil {
+		return fmt.Errorf("unable to insert: %w", err)
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf(commitTxnErr, err)
+	}
 	return err
 }
 
@@ -75,12 +90,12 @@ func (t *taskDB) insert(name, project string) error {
 	if err != nil {
 		return fmt.Errorf(beginDBErr, err)
 	}
-	stmt, err := tx.Prepare(insertCmd)
+	stmt, err := tx.Prepare(insertStmt)
 	if err != nil {
 		return fmt.Errorf(prepareTxnErr, err)
 	}
 	defer stmt.Close()
-	if _, err := stmt.Exec(name, project, todo.String(), time.Now().Format(time.RFC822)); err != nil {
+	if _, err := stmt.Exec(name, project, todo.String(), time.Now()); err != nil {
 		return fmt.Errorf("unable to insert: %w", err)
 	}
 	if err := tx.Commit(); err != nil {
@@ -94,7 +109,7 @@ func (t *taskDB) delete(id uint) error {
 	if err != nil {
 		return fmt.Errorf(beginDBErr, err)
 	}
-	stmt, err := tx.Prepare(deleteCmd)
+	stmt, err := tx.Prepare(deleteStmt)
 	if err != nil {
 		return fmt.Errorf(prepareTxnErr, err)
 	}
@@ -117,9 +132,12 @@ func (t *taskDB) update(task task) error {
 	}
 
 	orig, err := t.getTask(task.ID)
+	if err != nil {
+		return err
+	}
 	orig.merge(task)
 
-	stmt, err := tx.Prepare(updateCmd)
+	stmt, err := tx.Prepare(updateStmt)
 	if err != nil {
 		return fmt.Errorf(prepareTxnErr, err)
 	}
@@ -190,9 +208,7 @@ func (t *taskDB) getTask(id uint) (task, error) {
 		return task, fmt.Errorf(prepareTxnErr, err)
 	}
 	defer stmt.Close()
-	err = tx.QueryRow(
-		`SELECT * FROM tasks WHERE id = ?`,
-		id).Scan(
+	err = stmt.QueryRow(id).Scan(
 		&task.ID,
 		&task.Name,
 		&task.Project,
