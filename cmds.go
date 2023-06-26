@@ -76,13 +76,22 @@ var updateCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		status, err := cmd.Flags().GetString("status")
+		prog, err := cmd.Flags().GetInt("status")
 		if err != nil {
 			return err
 		}
 		id, err := strconv.Atoi(args[0])
 		if err != nil {
 			return err
+		}
+		var status string
+		switch prog {
+		case int(inProgress):
+			status = inProgress.String()
+		case int(done):
+			status = done.String()
+		default:
+			status = todo.String()
 		}
 		newTask := task{uint(id), name, project, status, time.Time{}}
 		return t.update(newTask)
@@ -112,9 +121,9 @@ var listCmd = &cobra.Command{
 func setupTable(tasks []task) table.Model {
 	columns := []table.Column{
 		{Title: "ID", Width: 3},
-		{Title: "Name", Width: 30},
+		{Title: "Name", Width: 45},
 		{Title: "Project", Width: 20},
-		{Title: "Status", Width: 10},
+		{Title: "Status", Width: 15},
 		{Title: "Created At", Width: 10},
 	}
 	var rows []table.Row
@@ -158,10 +167,10 @@ func init() {
 		"",
 		"specify a project for your task",
 	)
-	updateCmd.Flags().StringP(
+	updateCmd.Flags().IntP(
 		"status",
 		"s",
-		"",
+		int(todo),
 		"specify a status for your task",
 	)
 	rootCmd.AddCommand(updateCmd)

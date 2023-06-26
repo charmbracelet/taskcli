@@ -1,4 +1,4 @@
-module task-manager
+module tm
 
 go 1.19
 
