@@ -5,6 +5,10 @@ import (
 	"strconv"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/kancli"
+
+	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/spf13/cobra"
@@ -41,7 +45,7 @@ var addCmd = &cobra.Command{
 }
 
 var deleteCmd = &cobra.Command{
-	Use:   "delete",
+	Use:   "delete ID",
 	Short: "Delete a task by ID",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -59,7 +63,7 @@ var deleteCmd = &cobra.Command{
 }
 
 var updateCmd = &cobra.Command{
-	Use:   "update",
+	Use:   "update ID",
 	Short: "Update a task by ID",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -128,7 +132,13 @@ func setupTable(tasks []task) table.Model {
 	}
 	var rows []table.Row
 	for _, task := range tasks {
-		rows = append(rows, table.Row{fmt.Sprintf("%d", task.ID), task.Name, task.Project, task.Status, task.Created.Format("2006-01-02")})
+		rows = append(rows, table.Row{
+			fmt.Sprintf("%d", task.ID),
+			task.Name,
+			task.Project,
+			task.Status,
+			task.Created.Format("2006-01-02"),
+		})
 	}
 	t := table.New(
 		table.WithColumns(columns),
@@ -144,6 +154,48 @@ func setupTable(tasks []task) table.Model {
 		Bold(false)
 	t.SetStyles(s)
 	return t
+}
+
+var kanbanCmd = &cobra.Command{
+	Use:   "kanban",
+	Short: "Interact with your tasks in a Kanban board.",
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		t, err := openDB(setupPath())
+		if err != nil {
+			return err
+		}
+		defer t.db.Close()
+		todos, err := t.getTasksByStatus(todo.String())
+		if err != nil {
+			return err
+		}
+		ipr, err := t.getTasksByStatus(inProgress.String())
+		if err != nil {
+			return err
+		}
+		finished, err := t.getTasksByStatus(done.String())
+		if err != nil {
+			return err
+		}
+
+		todoCol := kancli.NewColumn(tasksToItems(todos), todo, true)
+		iprCol := kancli.NewColumn(tasksToItems(ipr), inProgress, false)
+		doneCol := kancli.NewColumn(tasksToItems(finished), done, false)
+		board := kancli.NewDefaultBoard([]kancli.Column{todoCol, iprCol, doneCol})
+		p := tea.NewProgram(board)
+		_, err = p.Run()
+		return err
+	},
+}
+
+// convert tasks to items for a list
+func tasksToItems(tasks []task) []list.Item {
+	var items []list.Item
+	for _, t := range tasks {
+		items = append(items, t)
+	}
+	return items
 }
 
 func init() {
@@ -175,4 +227,5 @@ func init() {
 	)
 	rootCmd.AddCommand(updateCmd)
 	rootCmd.AddCommand(deleteCmd)
+	rootCmd.AddCommand(kanbanCmd)
 }

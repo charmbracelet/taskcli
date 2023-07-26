@@ -10,30 +10,6 @@ styles *and* can be viewed using our kanban board.
 
 Here's the plan:
 
-## The Goal
-
-We want to be able to keep track of our daily tasks.
-
-To do so, tasks should look something like this:
-
-```go
-type status string
-
-const (
-    pending status = iota 
-    completed
-)
-
-type Task struct {
-    ID uint
-    Status status
-    Title string
-    Description string
-    Created time.Time
-    Modified time.Time
-}
-```
-
 ## Checklist
 
 If you're following along with our tutorials for this project, or even if you
@@ -58,6 +34,16 @@ what you need to do:
 ### Add a little... *Je ne sais quoi*
 - [ ] print to table layout with [Lip Gloss][lipgloss]
 - [ ] print to Kanban layout with [Lip Gloss][lipgloss]
+
+## Project Layout
+
+`db.go` - here we create our custom `task` struct and our data layer.
+
+`main.go` - our main file handles our initial setup including opening a
+database and setting the data path for our application.
+
+`cmds.go` - this is where we do all of our Cobra commands and setup for our
+CLI.
 
 [lipgloss]: https://github.com/charmbracelet/lipgloss
 [charm]: https://github.com/charmbracelet/charm

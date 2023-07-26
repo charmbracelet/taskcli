@@ -166,6 +166,41 @@ func TestMerge(t *testing.T) {
 	}
 }
 
+func TestGetTasksByStatus(t *testing.T) {
+	tests := []struct {
+		want task
+	}{
+		{
+			want: task{
+				ID:      1,
+				Name:    "get milk",
+				Project: "groceries",
+				Status:  todo.String(),
+			},
+		},
+	}
+	for _, tc := range tests {
+		t.Run(tc.want.Name, func(t *testing.T) {
+			tDB := setup()
+			defer teardown(tDB)
+			if err := tDB.insert(tc.want.Name, tc.want.Project); err != nil {
+				t.Fatalf("we ran into an unexpected error: %v", err)
+			}
+			tasks, err := tDB.getTasksByStatus(tc.want.Status)
+			if err != nil {
+				t.Fatalf("we ran into an unexpected error: %v", err)
+			}
+			if len(tasks) < 1 {
+				t.Fatalf("expected 1 value, got %#v", tasks)
+			}
+			tc.want.Created = tasks[0].Created
+			if !reflect.DeepEqual(tasks[0], tc.want) {
+				t.Fatalf("got: %#v, want: %#v", tasks, tc.want)
+			}
+		})
+	}
+}
+
 func cleanTempDir() string {
 	tmp := os.TempDir()
 	if tmp[len(tmp)-1] != '/' {

@@ -36,6 +36,38 @@ type task struct {
 	Created time.Time
 }
 
+// implement list.Item & list.DefaultItem
+func (t task) FilterValue() string {
+	return t.Name
+}
+
+func (t task) Title() string {
+	return t.Name
+}
+
+func (t task) Description() string {
+	return t.Project
+}
+
+// implement kancli.Status
+func (s status) Next() int {
+	if s == done {
+		return int(todo)
+	}
+	return int(s + 1)
+}
+
+func (s status) Prev() int {
+	if s == todo {
+		return int(done)
+	}
+	return int(s - 1)
+}
+
+func (s status) Int() int {
+	return int(s)
+}
+
 type taskDB struct {
 	db      *sql.DB
 	dataDir string
@@ -120,6 +152,29 @@ func (orig *task) merge(t task) {
 func (t *taskDB) getTasks() ([]task, error) {
 	var tasks []task
 	rows, err := t.db.Query("SELECT * FROM tasks")
+	if err != nil {
+		return tasks, fmt.Errorf("unable to get values: %w", err)
+	}
+	for rows.Next() {
+		var task task
+		err = rows.Scan(
+			&task.ID,
+			&task.Name,
+			&task.Project,
+			&task.Status,
+			&task.Created,
+		)
+		if err != nil {
+			return tasks, err
+		}
+		tasks = append(tasks, task)
+	}
+	return tasks, err
+}
+
+func (t *taskDB) getTasksByStatus(status string) ([]task, error) {
+	var tasks []task
+	rows, err := t.db.Query("SELECT * FROM tasks WHERE status = ?", status)
 	if err != nil {
 		return tasks, fmt.Errorf("unable to get values: %w", err)
 	}
