@@ -2,11 +2,14 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
 	"strconv"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/kancli"
+	"golang.org/x/term"
 
 	"github.com/charmbracelet/bubbles/list"
 	"github.com/charmbracelet/bubbles/table"
@@ -122,13 +125,56 @@ var listCmd = &cobra.Command{
 	},
 }
 
+func calculateWidth(min, width int) int {
+	p := width / 10
+	switch min {
+	case XS:
+		if p < XS {
+			return XS
+		}
+		return p / 2
+
+	case SM:
+		if p < SM {
+			return SM
+		}
+		return p / 2
+	case MD:
+		if p < MD {
+			return MD
+		}
+		return p * 2
+	case LG:
+		if p < LG {
+			return LG
+		}
+		return p * 3
+	default:
+		return p
+	}
+}
+
+const (
+	XS int = 1
+	SM int = 3
+	MD int = 5
+	LG int = 10
+)
+
 func setupTable(tasks []task) table.Model {
+	// get term size
+	w, _, err := term.GetSize(int(os.Stdout.Fd()))
+	if err != nil {
+		// we don't really want to fail it...
+		log.Println("unable to calculate height and width of terminal")
+	}
+
 	columns := []table.Column{
-		{Title: "ID", Width: 3},
-		{Title: "Name", Width: 45},
-		{Title: "Project", Width: 20},
-		{Title: "Status", Width: 15},
-		{Title: "Created At", Width: 10},
+		{Title: "ID", Width: calculateWidth(XS, w)},
+		{Title: "Name", Width: calculateWidth(LG, w)},
+		{Title: "Project", Width: calculateWidth(MD, w)},
+		{Title: "Status", Width: calculateWidth(SM, w)},
+		{Title: "Created At", Width: calculateWidth(MD, w)},
 	}
 	var rows []table.Row
 	for _, task := range tasks {
