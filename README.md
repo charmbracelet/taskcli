@@ -1,4 +1,4 @@
-# Creating a Task Manager Tutorial
+# Creating a Task Manager (a Charm Tutorial)
 
 This project is inspired by the incredible work on Task Warrior, an open source
 CLI task manager. I use this project quite a bit for managing my projects
@@ -7,6 +7,9 @@ without leaving the safety and comfort of my terminal. (⌐■_■)
 We built a kanban board TUI in a previous [tutorial][kanban-video], so the
 idea here is that we're going to build a task management CLI with [Cobra][cobra] that has Lip Gloss
 styles *and* can be viewed using our kanban board.
+
+*Note: We walk through the code explaining each and every piece of it in the
+[corresponding video](https://youtu.be/yiFhQGJeRJk) for this tutorial. Enjoy!!*
 
 Here's the plan:
 
