@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 
 	_ "github.com/mattn/go-sqlite3"
 	gap "github.com/muesli/go-app-paths"
@@ -38,7 +39,7 @@ func setupPath() string {
 
 // openDB opens a SQLite database and stores that database in our special spot.
 func openDB(path string) (*taskDB, error) {
-	db, err := sql.Open("sqlite3", fmt.Sprintf("%s/tasks.db", path))
+	db, err := sql.Open("sqlite3", filepath.Join(path, "tasks.db"))
 	if err != nil {
 		return nil, err
 	}
