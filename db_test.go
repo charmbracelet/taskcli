@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 )
@@ -201,16 +202,8 @@ func TestGetTasksByStatus(t *testing.T) {
 	}
 }
 
-func cleanTempDir() string {
-	tmp := os.TempDir()
-	if tmp[len(tmp)-1] != '/' {
-		return tmp + "/"
-	}
-	return tmp
-}
-
 func setup() *taskDB {
-	path := cleanTempDir() + "test.db"
+	path := filepath.Join(os.TempDir(), "test.db")
 	db, err := sql.Open("sqlite3", path)
 	if err != nil {
 		log.Fatal(err)
