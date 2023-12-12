@@ -2,18 +2,15 @@ package main
 
 import (
 	"fmt"
-	"log"
-	"os"
 	"strconv"
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/kancli"
-	"golang.org/x/term"
 
 	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/bubbles/table"
 	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/lipgloss/table"
 	"github.com/spf13/cobra"
 )
 
@@ -119,66 +116,16 @@ var listCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		table := setupTable(tasks)
-		fmt.Print(table.View())
+		fmt.Print(setupTable(tasks))
 		return nil
 	},
 }
 
-func calculateWidth(min, width int) int {
-	p := width / 10
-	switch min {
-	case XS:
-		if p < XS {
-			return XS
-		}
-		return p / 2
-
-	case SM:
-		if p < SM {
-			return SM
-		}
-		return p / 2
-	case MD:
-		if p < MD {
-			return MD
-		}
-		return p * 2
-	case LG:
-		if p < LG {
-			return LG
-		}
-		return p * 3
-	default:
-		return p
-	}
-}
-
-const (
-	XS int = 1
-	SM int = 3
-	MD int = 5
-	LG int = 10
-)
-
-func setupTable(tasks []task) table.Model {
-	// get term size
-	w, _, err := term.GetSize(int(os.Stdout.Fd()))
-	if err != nil {
-		// we don't really want to fail it...
-		log.Println("unable to calculate height and width of terminal")
-	}
-
-	columns := []table.Column{
-		{Title: "ID", Width: calculateWidth(XS, w)},
-		{Title: "Name", Width: calculateWidth(LG, w)},
-		{Title: "Project", Width: calculateWidth(MD, w)},
-		{Title: "Status", Width: calculateWidth(SM, w)},
-		{Title: "Created At", Width: calculateWidth(MD, w)},
-	}
-	var rows []table.Row
+func setupTable(tasks []task) *table.Table {
+	columns := []string{"ID", "Name", "Project", "Status", "Created At"}
+	var rows [][]string
 	for _, task := range tasks {
-		rows = append(rows, table.Row{
+		rows = append(rows, []string{
 			fmt.Sprintf("%d", task.ID),
 			task.Name,
 			task.Project,
@@ -186,19 +133,26 @@ func setupTable(tasks []task) table.Model {
 			task.Created.Format("2006-01-02"),
 		})
 	}
-	t := table.New(
-		table.WithColumns(columns),
-		table.WithRows(rows),
-		table.WithFocused(false),
-		table.WithHeight(len(tasks)),
-	)
-	s := table.DefaultStyles()
-	s.Header = s.Header.
-		BorderStyle(lipgloss.NormalBorder()).
-		BorderForeground(lipgloss.Color("240")).
-		BorderBottom(true).
-		Bold(false)
-	t.SetStyles(s)
+	t := table.New().
+		Border(lipgloss.HiddenBorder()).
+		Headers(columns...).
+		Rows(rows...).
+		StyleFunc(func(row, col int) lipgloss.Style {
+			if row == 0 {
+				return lipgloss.NewStyle().
+					Foreground(lipgloss.Color("212")).
+					Border(lipgloss.NormalBorder()).
+					BorderTop(false).
+					BorderLeft(false).
+					BorderRight(false).
+					BorderBottom(true).
+					Bold(true)
+			}
+			if row%2 == 0 {
+				return lipgloss.NewStyle().Foreground(lipgloss.Color("246"))
+			}
+			return lipgloss.NewStyle()
+		})
 	return t
 }
 
