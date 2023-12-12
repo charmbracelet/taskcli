@@ -47,6 +47,16 @@ var addCmd = &cobra.Command{
 	},
 }
 
+var whereCmd = &cobra.Command{
+	Use:   "where",
+	Short: "Show where your tasks are stored",
+	Args:  cobra.NoArgs,
+	RunE: func(cmd *cobra.Command, args []string) error {
+		_, err := fmt.Println(setupPath())
+		return err
+	},
+}
+
 var deleteCmd = &cobra.Command{
 	Use:   "delete ID",
 	Short: "Delete a task by ID",
@@ -272,6 +282,7 @@ func init() {
 		"specify a status for your task",
 	)
 	rootCmd.AddCommand(updateCmd)
+	rootCmd.AddCommand(whereCmd)
 	rootCmd.AddCommand(deleteCmd)
 	rootCmd.AddCommand(kanbanCmd)
 }
