@@ -17,6 +17,8 @@ jobs:
         uses: actions/setup-go@v4
         with:
           go-version: ${{ matrix.go-version }}
+      - name: Cleaning
+        run: go clean --modcache
       - name: Build
         run: go build -v ./...
       - name: Test
