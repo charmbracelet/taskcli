@@ -14,6 +14,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - name: Set up Go environment
+        run: |
+        go env
+      - name: Install dependencies
+        run: |
+        go mod tidy
       - name: golangci-lint
         uses: golangci/golangci-lint-action@v5
         with:
