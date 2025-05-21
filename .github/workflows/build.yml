@@ -18,10 +18,10 @@ jobs:
           go-version-file: 'go.mod'
           cache-dependency-path: go.sum
       - name: Configure Go environment
-       env:
-         GOPROXY: "https://proxy.golang.org,direct"
-         GOSUMDB: "sum.golang.org"
-       run: go mod tidy
+        env:
+          GOPROXY: "https://proxy.golang.org,direct"
+          GOSUMDB: "sum.golang.org"
+        run: go mod tidy
       - name: Build
         run: go build -v ./...
       - name: Test
