@@ -9,8 +9,8 @@ import (
 	"github.com/charmbracelet/kancli"
 
 	"github.com/charmbracelet/bubbles/list"
-	"github.com/charmbracelet/lipgloss"
-	"github.com/charmbracelet/lipgloss/table"
+	"github.com/charmbracelet/lipgloss/v2"
+	"github.com/charmbracelet/lipgloss/v2/table"
 	"github.com/spf13/cobra"
 )
 
@@ -148,7 +148,7 @@ func setupTable(tasks []task) *table.Table {
 		Headers(columns...).
 		Rows(rows...).
 		StyleFunc(func(row, col int) lipgloss.Style {
-			if row == 0 {
+			if row == table.HeaderRow {
 				return lipgloss.NewStyle().
 					Foreground(lipgloss.Color("212")).
 					Border(lipgloss.NormalBorder()).
